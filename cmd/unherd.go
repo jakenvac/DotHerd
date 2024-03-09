@@ -5,12 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
-	ds "github.com/jakenvac/DotHerd/dotstore"
+	"github.com/jakenvac/DotHerd/repo"
 	"github.com/urfave/cli/v2"
 )
 
-func Release(store *ds.DotStore) *cli.Command {
-	var releaseAction = func(c *cli.Context) error {
+func Unherd(repo *repo.DotRepo) *cli.Command {
+	var unherdAction = func(c *cli.Context) error {
 		if c.NArg() == 0 {
 			cli.ShowSubcommandHelpAndExit(c, 1)
 		}
@@ -21,8 +21,8 @@ func Release(store *ds.DotStore) *cli.Command {
 			return cli.Exit(fmt.Sprintf("Error getting absolute path: %s", absErr), 1)
 		}
 
-		var aliasInPen, aliasErr = store.DotToPenAlias(dotLinkAbs)
-		if aliasErr != nil {
+		var nameInPen, nameErr = repo.NameFromLink(dotLinkAbs)
+		if nameErr != nil {
 			return cli.Exit(fmt.Sprintf("Unable to find alias in pen for dotfile %s.", dotLinkAbs), 1)
 		}
 
@@ -30,22 +30,22 @@ func Release(store *ds.DotStore) *cli.Command {
 			return cli.Exit(fmt.Sprintf("Error removing symlink: %s", err), 1)
 		}
 
-		if err := os.Rename(aliasInPen, dotLinkAbs); err != nil {
+		if err := os.Rename(nameInPen, dotLinkAbs); err != nil {
 			fmt.Println(err)
-			return cli.Exit(fmt.Sprintf("Error moving %s to to original location: %s", aliasInPen, dotLinkAbs), 1)
+			return cli.Exit(fmt.Sprintf("Error moving %s to to original location: %s", nameInPen, dotLinkAbs), 1)
 		}
 
-		if err := store.Release(dotLinkAbs); err != nil {
-			return cli.Exit(fmt.Sprintf("Error removing dotfile from store: %s", err), 1)
+		if err := repo.Unherd(dotLinkAbs); err != nil {
+			return cli.Exit(fmt.Sprintf("Error removing dotfile from repo: %s", err), 1)
 		}
 
 		return nil
 	}
 
 	return &cli.Command{
-		Name:     "release",
+		Name:     "unherd",
 		Category: "Dotfiles",
-		Usage:    "Release a dotfile from the pen (Restores the original file)",
-		Action:   releaseAction,
+		Usage:    "Unherd a dotfile from the pen (Rerepos the original file)",
+		Action:   unherdAction,
 	}
 }
